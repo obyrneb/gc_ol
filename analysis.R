@@ -3,9 +3,37 @@ library(broom)
 library(janitor)
 
 pop <- pop_raw %>% 
-  filter(Date == 201903) %>% 
-  spread(FOL, Employees) %>% 
-  rename(dept = Departments.and.Agencies)
+  clean_names() %>% 
+  filter(date == 201903) %>% 
+  spread(fol, employees, fill = 0) %>% 
+  mutate_at(vars(English,French,Unknown), as.numeric) %>% 
+  mutate(total = English + French + Unknown,
+         fol_en = English / total,
+         fol_fr = French / total) %>% 
+  rename(dept = departments_and_agencies)
 
 ol_aug <- ol_raw %>% 
-  left_join()
+  mutate(test_language = case_when(description_e == "Pass Rates for the English Test" ~ "English",
+                              description_e == "Pass Rates for the French Test" ~ "French"),
+         test_level = case_when(required_level_e == "Level A only" ~ "A",
+                           required_level_e == "Level B only" ~ "B",
+                           required_level_e == "Level C only" ~ "C"),
+         maj_lang = case_when(region_e == "East" ~ "English",
+                              region_e == "West" ~ "English",
+                              region_e == "NCR" ~ "Bilingual",
+                              region_e == "Quebec except NCR" ~ "French"),
+         n_pass = (pass_rate_e / 100 * total_number_tests) %>% round(),
+         n_fail = total_number_tests - n_pass) %>%
+  select(fiscal_year,
+         dept = requesting_department_e,
+         region = region_e,
+         test_language,
+         test_level,
+         maj_lang,
+         pass_rate = pass_rate_e,
+         n_tests = total_number_tests,
+         n_pass,
+         n_fail) %>% 
+  filter(fiscal_year == "2018-2019") %>% 
+  left_join(pop %>% select(dept, fol_en, fol_fr)) 
+
