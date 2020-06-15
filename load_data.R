@@ -5,6 +5,10 @@ if (!dir.exists(file.path(getwd(),"data"))) {
   dir.create(file.path(getwd(),"data"))
 }
 
+if (!dir.exists(file.path(getwd(),"plots"))) {
+  dir.create(file.path(getwd(),"plots"))
+}
+
 ol_url <- "https://www.canada.ca/content/dam/psc-cfp/documents/data-donnees/ar-ra/2016/ppc-cpp/CFPPSC_SLE03.csv"
 ol_file <- file.path(getwd(),"data","CFPPSC_SLE03.csv")
 

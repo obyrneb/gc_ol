@@ -1,6 +1,7 @@
 library(tidyverse)
 library(broom)
 library(janitor)
+library(cowplot)
 
 pop <- pop_raw %>% 
   clean_names() %>% 
@@ -13,11 +14,11 @@ pop <- pop_raw %>%
   rename(dept = departments_and_agencies)
 
 ol_aug <- ol_raw %>% 
-  mutate(test_language = case_when(description_e == "Pass Rates for the English Test" ~ "English",
-                              description_e == "Pass Rates for the French Test" ~ "French"),
-         test_level = case_when(required_level_e == "Level A only" ~ "A",
-                           required_level_e == "Level B only" ~ "B",
-                           required_level_e == "Level C only" ~ "C"),
+  mutate(test_language = case_when(description_e == "Pass Rates for the English Test" ~ "English Test",
+                              description_e == "Pass Rates for the French Test" ~ "French Test"),
+         test_level = case_when(required_level_e == "Level A only" ~ "A Level",
+                           required_level_e == "Level B only" ~ "B Level",
+                           required_level_e == "Level C only" ~ "C Level"),
          maj_lang = case_when(region_e == "East" ~ "English",
                               region_e == "West" ~ "English",
                               region_e == "NCR" ~ "Bilingual",
@@ -44,7 +45,25 @@ ggplot(ol_aug) +
   geom_point(aes(x = fiscal_year, y = pass_rate, size = n_tests, fill = region, alpha = my_dept, colour = my_dept),
              position = position_jitter(width = 0.1, height = 0),
              shape = 21) +
-  scale_alpha_manual(values = c(TBS = 1, Other = 0.2)) +
+  scale_alpha_manual(values = c(TBS = 1, Other = 0.5)) +
   scale_colour_manual(values = c(TBS = "black", Other = "grey80")) +
-  #geom_smooth(aes(x = fiscal_year, y = pass_rate)) +
-  facet_grid(rows = vars(test_language), cols = vars(test_level))
+  scale_size_continuous(range = c(1,10)) +
+  scale_y_continuous(breaks = c(0,25,50,75,100), limits = c(0,100)) +
+  #scale_fill_manual(values = c(East = "#984ea3",
+  #                             NCR = "#e41a1c",
+  #                             `Quebec except NCR` = "#377eb8",
+  #                             West = "#4daf4a")) +
+  ##geom_smooth(aes(x = fiscal_year, y = pass_rate)) +
+  facet_grid(rows = vars(test_language), cols = vars(test_level)) +
+  labs(title = "Oral Second Language Evaluation Results by Department (2010-11 to 2018-19)",
+       subtitle = "Each dot represents a number of tests for a department in a specific region.",
+       caption = "Data: https://www.canada.ca/content/dam/psc-cfp/documents/data-donnees/ar-ra/2016/ppc-cpp/CFPPSC_SLE03.csv",
+       x = "Fiscal year",
+       y = "Pass rate (%)",
+       fill = "Region",
+       colour = "Department",
+       alpha = "Department",
+       size = "Number of tests") +
+  theme(axis.text.x = element_text(angle = 270))
+
+ggsave(file.path(getwd(),"plots","Oral SLE Pass Rates.png"), width = 10, height = 8)
